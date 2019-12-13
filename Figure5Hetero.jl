@@ -1,14 +1,16 @@
 using RCall
-include("ProblemGenerator.jl")
+using Distributed
+addprocs(2)
+@everywhere include("ProblemGenerator.jl")
 
 
 #Need a function that creates distributions of heterogenous states
-AddNoise2States(σ) = [TruncatedNormal(μ,σ*μ,0,Inf) for μ in nonZeroSpeciesValues]
+@everywhere AddNoise2States(σ) = [TruncatedNormal(μ,σ*μ,0,Inf) for μ in nonZeroSpeciesValues]
 
 #Create a function that calculate the peak IFN distribution given:
  #The number of cells initially infected
  #The amount of noise desired for the initial protien concentrations
-function HeteroSimulation(primeCellPercent,varIC,prob)
+@everywhere function HeteroSimulation(primeCellPercent,varIC,prob)
     #Make a copy of the initial conditions
     u0 = copy(prob.u0)
     #Get number of primary cells wanted from percent
@@ -44,19 +46,24 @@ function HeteroSimulation(primeCellPercent,varIC,prob)
     return [maxIFN[isPrimary],maxIFN[.!isPrimary]]
 end
 
-prob = ModelSetup(:ISD,:notStochastic)
+@everywhere prob = ModelSetup(:ISD,:notStochastic)
 
 varICRange = 0.0:0.1:1.0
 varIClength = length(varICRange)
-primeCellPercent = 0.63
+primeCellPercent = [0.01, 0.10, 0.63]
+maxIFNDis = Vector(undef,length(primeCellPercent))
 
-maxIFNDis = map(x -> HeteroSimulation(primeCellPercent,x,prob),varICRange)
+for i = 1:length(primeCellPercent)
+    maxIFNDis[i] = pmap(x -> HeteroSimulation(primeCellPercent[i],x,prob),varICRange)
+end
 
-primary = [maxIFNDis[i][1] for i=1:length(varICRange)]
-secondary = [maxIFNDis[i][2] for i=1:length(varICRange)]
 
-primary = DataFrame(percent=repeat(1:varIClength,inner= round(Int,nCells * primeCellPercent)), maxIFN = vcat(primary...))
-secondary = DataFrame(percent=repeat(1:varIClength,inner= round(Int,nCells * (1.0-primeCellPercent))), maxIFN = vcat(secondary...))
+
+primary = [maxIFNDis[3][i][1] for i=1:length(varICRange)]
+secondary = [maxIFNDis[3][i][2] for i=1:length(varICRange)]
+
+primary = DataFrame(percent=repeat(1:varIClength,inner= round(Int,nCells * primeCellPercent[3])), maxIFN = vcat(primary...))
+secondary = DataFrame(percent=repeat(1:varIClength,inner= round(Int,nCells * (1.0-primeCellPercent[3]))), maxIFN = vcat(secondary...))
 
 
 @df primary violin(:percent, :maxIFN,side=:left,frame=:box,label=:primary,legend=:topleft,show_median=true,trim=false)

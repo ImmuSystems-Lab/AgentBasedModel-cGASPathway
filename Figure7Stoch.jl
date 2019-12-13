@@ -1,5 +1,5 @@
 using Distributed
-addprocs(2)
+addprocs(4)
 
 @everywhere include("ProblemGenerator.jl")
 @everywhere include("VirusCallBacks.jl")
@@ -23,7 +23,7 @@ addprocs(2)
 
     #Assign the new parameters to the model
     probStoch = remake(prob; p=θ)
-    sol = solve(probStoch,CVODE_BDF(linear_solver=:GMRES),callback=cb)
+    sol = @time solve(probStoch,CVODE_BDF(linear_solver=:GMRES),callback=cb)
 
     #Calculate the cell state dynamics over time
     saveTimePoints = range(prob.tspan[1],prob.tspan[2],step=0.1)
@@ -41,7 +41,13 @@ end
 @everywhere prob = ModelSetup(:Virus,:Stochastic)
 
 percentIFN = 0.0:0.1:1.0
-states = pmap(x -> VirusStoch(x,prob),percentIFN)
+#Number of repititions for each IFN percentage
+reps = 10
+states = Vector(undef,reps)
+
+for i = 1:reps
+    states[i] = pmap(x -> VirusStoch(x,prob),percentIFN)
+end
 
 
 plot(range(prob.tspan[1],prob.tspan[2],step=0.1),states ./ nCells)

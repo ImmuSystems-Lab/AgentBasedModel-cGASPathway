@@ -10,9 +10,18 @@ addprocs(2)
 @everywhere function ChronicIFN(kcat8,τ7,prob)
     #Make a copy of the parameter container
     θ = deepcopy(prob.p)
-    #Set the parameters to desired input
-    θ.par[13] = kcat8
-    θ.par[27] = τ7
+
+    #Need to check if each cell has a unique parameter set
+    if isa(prob.p.par[1],Array)
+      #Set the parameters to desired input
+      θ.par[13] .= kcat8
+      θ.par[27] .= τ7
+    else
+      #Set the parameters to desired input
+      θ.par[13] = kcat8
+      θ.par[27] = τ7
+    end
+
 
     @show (kcat8,τ7)
     #Generate the new problem (run for longer to ensure steady state)
@@ -24,10 +33,17 @@ end
 
 
 #Generate a problem
-@everywhere prob = ModelSetup(:ISD,:notStochastic)
+@everywhere prob = ModelSetup(:ISD,:Stochastic)
+
+#We need to know if every cell has been given a unique parameter set
+if isa(prob.p.par[1],Array) #Is the first parameter a single number or array?
+  kcat8True = unique(prob.p.par[13])
+  τ7True = unique(prob.p.par[27])
+else
+  kcat8True,τ7True = prob.p.par[[13,27]]
+end
 
 #Vary STAT production (kcat8) and IFN Degradation (τ7)
-kcat8True,τ7True = prob.p.par[[13,27]]
 parRange = 5
 kcat8Vals = range(0.5*kcat8True,2.0*kcat8True,length=parRange)
 τ7Vals = range(0.5*τ7True,2.0*τ7True,length=parRange)
@@ -44,26 +60,6 @@ end
 
 
 chronicIFN = DataFrame(kcat8 = kvals[:,1],tau7 = kvals[:,2], IFN = reverse(meanIFNβ[:]))
-@rput chronicIFN
 
-R"""
-library(ggplot2)
-library(ggpubr)
-
-p1 <- ggplot(chronicIFN, aes(kcat8, tau7, fill=IFN)) +
-  geom_raster(aes(fill=IFN)) +
-  labs(fill="IFN (nM)") +
-  ggtitle("Chronic Inflammation") +
-  theme_pubr(border=TRUE) +
-  scale_fill_distiller(palette = "Spectral",guide = guide_colorbar(frame.colour = "black", ticks.colour = "black")) +
-  scale_x_continuous(expand=c(0,0)) +
-  scale_y_continuous(expand=c(0,0)) +
-  theme_bw(base_size = 14) +
-  xlab(bquote("Interferon Degradation" ~ tau[7])) +
-  ylab(bquote("JAK/STAT Activity" ~ k[cat8])) +
-  labs(fill="IFN (nM)") +
-  theme(plot.title = element_text(hjust = 0.5),aspect.ratio = 1)
-
-
-ggsave("./Figures/Figure6.pdf")
-"""
+#Save the simulation to plot
+CSV.write("StochFigure6Data.csv",chronicIFN)

@@ -2,7 +2,7 @@
 #change the number of cores used as needed
 using RCall
 using Distributed
-addprocs(2)
+addprocs(56)
 #The @everywhere macro runs the command/defines the thing on all the processors
 @everywhere include("ProblemGenerator.jl")
 
@@ -37,14 +37,14 @@ end
 
 #We need to know if every cell has been given a unique parameter set
 if isa(prob.p.par[1],Array) #Is the first parameter a single number or array?
-  kcat8True = unique(prob.p.par[13])
-  τ7True = unique(prob.p.par[27])
+  kcat8True = prob.p.par[13][1]
+  τ7True = prob.p.par[27][1]
 else
   kcat8True,τ7True = prob.p.par[[13,27]]
 end
 
 #Vary STAT production (kcat8) and IFN Degradation (τ7)
-parRange = 5
+parRange = 20
 kcat8Vals = range(0.5*kcat8True,2.0*kcat8True,length=parRange)
 τ7Vals = range(0.5*τ7True,2.0*τ7True,length=parRange)
 

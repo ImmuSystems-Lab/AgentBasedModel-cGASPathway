@@ -50,7 +50,7 @@ function TryInfect(integrator)
     integrator.u = uReshaped[:]
 end
 
-cbInfect = DiscreteCallback(CheckInfect,TryInfect)
+cbInfect = DiscreteCallback(CheckInfect,TryInfect, save_positions=(false,false))
 
 
 #############################
@@ -89,6 +89,6 @@ function KillCell(integrator)
     integrator.p.cellsDead[targets] .= integrator.t
 end
 
-cbDead = DiscreteCallback(DeathCheck,KillCell)
+cbDead = DiscreteCallback(DeathCheck,KillCell,save_positions=(false,false))
 
 cb =CallbackSet(cbInfect,cbDead)

@@ -36,6 +36,7 @@ high = aggregate(allStateData[,1:14], list(allStateData$Infected,allStateData$Ti
 commonFigureOptions <- list( scale_x_continuous(breaks=seq(0, 48, 12)),
   theme_pubr(border=TRUE),
   ylab("nM"),
+  xlab("Time (hours)"),
   theme(plot.title = element_text(hjust = 0.5),aspect.ratio = 1))
 
 p1 <- ggplot(stateAve) + geom_line(aes(y=DNA, x=Time, group=Cell.State, color = Cell.State))+

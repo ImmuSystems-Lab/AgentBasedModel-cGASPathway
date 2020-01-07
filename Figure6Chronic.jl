@@ -33,7 +33,7 @@ end
 
 
 #Generate a problem
-@everywhere prob = ModelSetup(:ISD,:Stochastic)
+@everywhere prob = ModelSetup(:ISD,:Stochastic,:Hetero)
 
 #We need to know if every cell has been given a unique parameter set
 if isa(prob.p.par[1],Array) #Is the first parameter a single number or array?

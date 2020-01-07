@@ -46,7 +46,7 @@ addprocs(2)
     return [maxIFN[isPrimary],maxIFN[.!isPrimary]]
 end
 
-@everywhere prob = ModelSetup(:ISD,:notStochastic)
+@everywhere prob = ModelSetup(:ISD,:notStochastic,:Hetero)
 
 varICRange = 0.0:0.1:1.0
 varIClength = length(varICRange)

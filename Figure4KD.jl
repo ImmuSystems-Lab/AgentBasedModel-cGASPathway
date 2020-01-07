@@ -52,7 +52,7 @@ end
 ########################################################################
 
 #Define a problem
-@everywhere prob = ModelSetup(:ISD,:notStochastic)
+@everywhere prob = ModelSetup(:ISD,:notStochastic,:Homo)
 #Run the KD simulation
 KDSols = pmap(x-> KnockDownSim(x,prob),[20,23])
 
@@ -141,10 +141,8 @@ ODEpars = [2.6899, 4.8505, 0.0356, 7.487, 517.4056, 22328.3852, 11226.3682,0.934
  colnames(stateAve)[1] <- "Percent"
  colnames(stateAve)[2] <- "Time"
 
-
- stateSD = aggregate(KDData[,1:2], list(KDData$Percent,KDData$Time), sd)
- low = stateAve[,3:4] -  stateSD[,3:4]
- high = stateAve[,3:4] + stateSD[,3:4]
+ low = aggregate(KDData[,1:2], list(KDData$Percent,KDData$Time), FUN = 'quantile',probs=0.05)
+ high = aggregate(KDData[,1:2], list(KDData$Percent,KDData$Time), FUN = 'quantile',probs=0.95)
 
  commonFigureOptions <- list(scale_x_continuous(breaks=seq(0, 48, 12)),
    theme_pubr(border=TRUE),
@@ -174,10 +172,10 @@ ODEpars = [2.6899, 4.8505, 0.0356, 7.487, 517.4056, 22328.3852, 11226.3682,0.934
    commonFigureOptions
 
    figure <- ggarrange(p1, p2, p3, p4,
-                       labels = c("A", "B", "C", "D"),
+                       labels = "AUTO",
                        common.legend = TRUE, legend = "right",
                        align = "hv",
                        ncol = 2, nrow = 2)
- 
+
  ggsave("./Figures/Figure4.pdf")
  """

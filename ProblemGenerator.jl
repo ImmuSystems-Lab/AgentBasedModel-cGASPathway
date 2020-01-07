@@ -34,6 +34,9 @@ const θNames = [:k1f, :k1r, :k3f, :k3r, :k4f, :kcat5, :Km5, :k5r, :kcat6, :Km6,
  const nonZeroSpeciesIdx = [1,3,5] #cGAS, Sting, IRF3
  const nonZeroSpeciesValues = m2c([1e3, 1e3, 1e4]) #convert to concentration
 
+#THis function modifies initial values by adding guassian noise
+AddNoise2States(σ) = [TruncatedNormal(μ,σ*μ,0,Inf) for μ in nonZeroSpeciesValues]
+
 
  #Often it is useful to pass parameters between functions during the ODE solve,
  #This struct hold all the parameters that we need to keep track of
@@ -157,7 +160,7 @@ const θNames = [:k1f, :k1r, :k3f, :k3r, :k4f, :kcat5, :Km5, :k5r, :kcat6, :Km6,
 # 4. Set up function that will return an ODE problem to solve
  ###############################################################
 
-function ModelSetup(infectionMethod,IFNStoch)
+function ModelSetup(infectionMethod,IFNStoch,Hetero)
     #Paramter values for the ODEs
     θVals = [2.6899, 4.8505, 0.0356, 7.487, 517.4056, 22328.3852, 11226.3682,0.9341,
              206.9446, 10305.461, 47639.70295,3.8474, 13.006, 78.2048, 0.0209,
@@ -181,16 +184,24 @@ function ModelSetup(infectionMethod,IFNStoch)
   #Define the initial conditions
   u0 = zeros(N,N,species)
 
+if Hetero == :Hetero
+  noiseDistributions = AddNoise2States(0.5)
+  for (i,index) in enumerate(nonZeroSpeciesIdx)
+      u0[:,:,index] = rand(noiseDistributions[i],N,N)
+  end
+
+else
   #Loop through non-zero species and update their concentrations
   for (idx,val) in zip(nonZeroSpeciesIdx,nonZeroSpeciesValues)
       u0[:,:,idx] .=  val
   end
+end
 
   #Finally need to set the DNA initial condition
   if infectionMethod == :ISD
     #Define a region on the domain where cells will be infected
-    circleOrigin = [10,10] #Where is the center of the drop?
-    circleRadiusSquared = 50^2 #How big is the drop?
+    circleOrigin = [0,0] #Where is the center of the drop?
+    circleRadiusSquared = 100^2 #How big is the drop?
     #Calculate squared distances
     sqDist(x,c) = reduce(+, @. (x-c)^2)
     #Loop though cells and check if they are infected
@@ -208,7 +219,7 @@ function ModelSetup(infectionMethod,IFNStoch)
   end
 
 #Need to wrap everything up into the ParContainer struct
-  mass = [fill(i,N,N) for i in nonZeroSpeciesValues]
+  mass = [u0[:,:,i] for i in nonZeroSpeciesIdx]
   deathParameter = ones(N,N)
   DNAReplicate = infectionMethod==:ISD ? 0 : 1
   #Keep track of infected cells (save time when infected, Inf means not infected)

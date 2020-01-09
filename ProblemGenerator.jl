@@ -10,7 +10,7 @@ using JLD2, FileIO #Saving simulations
 ###############################################################
 
 #Constants for all cells
-const N=200 #number of grid points along one dimensions
+const N=50 #number of grid points along one dimensions
 const nCells = N^2 #number of cells in the simulation
 const cellVol = 3e-12 #Cell Volume (liters)
 const Na = 6.02e23 #Avagadro's number
@@ -201,7 +201,7 @@ end
   if infectionMethod == :ISD
     #Define a region on the domain where cells will be infected
     circleOrigin = [0,0] #Where is the center of the drop?
-    circleRadiusSquared = 100^2 #How big is the drop?
+    circleRadiusSquared = 50^2 #How big is the drop?
     #Calculate squared distances
     sqDist(x,c) = reduce(+, @. (x-c)^2)
     #Loop though cells and check if they are infected

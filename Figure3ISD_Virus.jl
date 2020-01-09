@@ -37,12 +37,7 @@ allStateDataISDStoch.Infected = repeat(vec(ISDprob.u0[:, :, 2] .> 0.0), timeLeng
 
 #--------------Virus--------------
 Virusprob = ModelSetup(:Virus, :Stochastic, :Hetero)
-Virussol = @time solve(
-  Virusprob,
-  CVODE_BDF(linear_solver = :GMRES),
-  saveat = 0.1,
-  callback = cb,
-)
+Virussol = @time solve(Virusprob,CVODE_BDF(linear_solver = :GMRES),saveat = 0.1,callback = cb)
 
 allStateDataVirus = DataFrame()
 for (i, st) in enumerate(statesNames)

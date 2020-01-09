@@ -3,9 +3,10 @@ using RCall
 #Run the KD simulations in parallel
 #change the number of cores used as needed
 using Distributed
-addprocs(2)
+addprocs(4)
 #The @everywhere macro runs the command/defines the thing on all the processors
 @everywhere include("ProblemGenerator.jl")
+@everywhere include("VirusCallBacks.jl")
 
 ########################################################################
 #Knockdown simulations of IRF7 and TREX1 (Figure 4)
@@ -13,42 +14,53 @@ addprocs(2)
 
 #Putting the calculations in a function will allow for easy parallelization
 @everywhere function KnockDownSim(par2Change,prob)
-    #Percentages to run the KD simulations
-    KnockDownVals=1:-0.25:0
-    percentLabels = [string(i)*"%" for i=0:25:100]
-    kdSamples = length(KnockDownVals)
+  #Percentages to run the KD simulations
+  KnockDownVals=1:-0.25:0
+  percentLabels = [string(i)*"%" for i=0:25:100]
+  kdSamples = length(KnockDownVals)
 
-    #Vector to save all IFN dynamics from simulation
-    solKD =  Vector(undef,kdSamples)
+  #Vector to save all IFN dynamics from simulation
+  solKD =  Vector(undef,kdSamples)
 
-    #Loop through the KD percents and solve ODEs
-    for (i,percent) in enumerate(KnockDownVals)
-        #Copy the parameters and change desired one
-        θcurrent = deepcopy(prob.p)
-        #Check if running ABM or ODE
-        if θcurrent isa Array #Are the parameters from the ODE model?
-            θcurrent[par2Change] = θcurrent[par2Change] * percent
-            #Print to track progress
-            println(θcurrent[[20,23]])
-        else #Oh nope its the ABM model then
-            θcurrent.par[par2Change] = θcurrent.par[par2Change] * percent
-            #Print to track progress
-            println(θcurrent.par[[20,23]])
-        end
+  #Loop through the KD percents and solve ODEs
+  for (i,percent) in enumerate(KnockDownVals)
+      #Copy the parameters and change desired one
+      θcurrent = deepcopy(prob.p)
+      #Check if running ABM or ODE
+      if θcurrent isa Array #Are the parameters from the ODE model?
+          θcurrent[par2Change] = θcurrent[par2Change] * percent
+          #Print to track progress
+          println(θcurrent[[20,23]])
+      else #Oh nope its the ABM model then
+          θcurrent.par[par2Change] = θcurrent.par[par2Change] * percent
+          #Print to track progress
+          println(θcurrent.par[[20,23]])
+      end
 
-        #Redefine problem with the new parameters and solve
-        probKD = remake(prob; p=θcurrent)
+      #Redefine problem with the new parameters and solve
+      probKD = remake(prob; p=θcurrent)
+
+      if θcurrent isa Array
         sol = solve(probKD,CVODE_BDF(linear_solver=:GMRES),saveat=0.1)
-        #Store the IFN concentrations
-        solKD[i] = θcurrent isa Array ? vec(sol[7,:]) : vec(sol[:,:,7,:])
+        solKD[i] = vec(sol[7,:])
+      else
+        #Check if ISD or Virus infection
+        if θcurrent.DNAReplicate == 0 #ISD
+          sol = solve(probKD,CVODE_BDF(linear_solver=:GMRES),saveat=0.1)
+        else #Virus
+          sol = solve(probKD,CVODE_BDF(linear_solver=:GMRES),saveat=0.1,callback = cb)
+        end
+        solKD[i] =vec(sol[:,:,7,:])
+      end
+
     end
 
-    #Return the IFN dynamics
-    return solKD
+  #Return the IFN dynamics
+  return solKD
 end
 
 ########################################################################
-#Knockdown ABM simulations
+#Knockdown ABM simulations (Deterministic and Homogeneous)
 ########################################################################
 
 #Define a problem
@@ -57,11 +69,11 @@ end
 KDSols = pmap(x-> KnockDownSim(x,prob),[20,23])
 
 #Save the simulation in a Dataframe to pass on to R (for plotting)
-KDData = DataFrame()
+KDDataDet = DataFrame()
 
 #Seperate out the columns for each KD
-KDData.IRF7KD = vcat(KDSols[1]...)
-KDData.TREXKD = vcat(KDSols[2]...)
+KDDataDet.IRF7KD = vcat(KDSols[1]...)
+KDDataDet.TREXKD = vcat(KDSols[2]...)
 
 #Create columns that keep track of cell ID, time, and KD percent
 timeLength = 481
@@ -70,9 +82,30 @@ percentLabels = [string(i)*"%" for i=0:25:100]
 kdSamples = length(KnockDownVals)
 
 #Put everything into the DataFrame
-KDData.Cell = repeat(1:nCells,timeLength*kdSamples)
-KDData.Time = repeat(0:0.1:48,inner=nCells,outer=kdSamples)
-KDData.Percent = repeat(KnockDownVals,inner=nCells*timeLength)
+KDDataDet.Cell = repeat(1:nCells,timeLength*kdSamples)
+KDDataDet.Time = repeat(0:0.1:48,inner=nCells,outer=kdSamples)
+KDDataDet.Percent = repeat(KnockDownVals,inner=nCells*timeLength)
+
+########################################################################
+#Knockdown ABM simulations (Stochastic and Heterogeneous)
+########################################################################
+#Define a problem
+@everywhere prob = ModelSetup(:ISD,:Stochastic,:Hetero)
+#Run the KD simulation
+KDSols = pmap(x-> KnockDownSim(x,prob),[20,23])
+
+#Save the simulation in a Dataframe to pass on to R (for plotting)
+KDDataStoch = DataFrame()
+
+#Seperate out the columns for each KD
+KDDataStoch.IRF7KD = vcat(KDSols[1]...)
+KDDataStoch.TREXKD = vcat(KDSols[2]...)
+
+#Put everything into the DataFrame
+KDDataStoch.Cell = repeat(1:nCells,timeLength*kdSamples)
+KDDataStoch.Time = repeat(0:0.1:48,inner=nCells,outer=kdSamples)
+KDDataStoch.Percent = repeat(KnockDownVals,inner=nCells*timeLength)
+
 
 ########################################################################
 #Knockdown ODE simulations
@@ -131,18 +164,34 @@ ODEpars = [2.6899, 4.8505, 0.0356, 7.487, 517.4056, 22328.3852, 11226.3682,0.934
  #Plotting the ABM and ODE solutions
  ########################################################################
 
- @rput KDData
+ @rput KDDataDet
+ @rput KDDataStoch
  @rput KDDataODE
  R"""
  library(ggplot2)
  library(ggpubr)
 
- stateAve = aggregate(KDData[,1:2], list(KDData$Percent,KDData$Time), mean)
- colnames(stateAve)[1] <- "Percent"
- colnames(stateAve)[2] <- "Time"
+#--------------Det--------------
+ ISDDetAve = aggregate(KDDataDet[,1:2], list(KDDataDet$Percent,KDDataDet$Time), mean)
+ colnames(ISDDetAve)[1] <- "Percent"
+ colnames(ISDDetAve)[2] <- "Time"
 
- low = aggregate(KDData[,1:2], list(KDData$Percent,KDData$Time), FUN = 'quantile',probs=0.05)
- high = aggregate(KDData[,1:2], list(KDData$Percent,KDData$Time), FUN = 'quantile',probs=0.95)
+ stateSD = aggregate(KDDataDet[,1:2], list(KDDataDet$Percent,KDDataDet$Time), sd)
+  lowDet = ISDDetAve[,3:4] -  stateSD[,3:4]
+  highDet = ISDDetAve[,3:4] + stateSD[,3:4]
+ #low = aggregate(KDDataDet[,1:2], list(KDDataDet$Percent,KDDataDet$Time), FUN = 'quantile',probs=0.05)
+ #high = aggregate(KDDataDet[,1:2], list(KDDataDet$Percent,KDDataDet$Time), FUN = 'quantile',probs=0.95)
+
+#--------------Stoch--------------
+ ISDStochAve = aggregate(KDDataStoch[,1:2], list(KDDataStoch$Percent,KDDataStoch$Time), mean)
+ colnames(ISDStochAve)[1] <- "Percent"
+ colnames(ISDStochAve)[2] <- "Time"
+
+ stateSD = aggregate(KDDataStoch[,1:2], list(KDDataStoch$Percent,KDDataStoch$Time), sd)
+  lowStoch = ISDStochAve[,3:4] -  stateSD[,3:4]
+  highStoch = ISDStochAve[,3:4] + stateSD[,3:4]
+
+
 
  commonFigureOptions <- list(scale_x_continuous(breaks=seq(0, 48, 12)),
    theme_pubr(border=TRUE),
@@ -159,23 +208,35 @@ ODEpars = [2.6899, 4.8505, 0.0356, 7.487, 517.4056, 22328.3852, 11226.3682,0.934
    ylab("IFN (nM)") +
    commonFigureOptions
 
- p3 <- ggplot(stateAve) + geom_line(aes(y=TREXKD, x=Time, group=factor(Percent), color = factor(Percent))) +
-   geom_ribbon(aes(ymin=low$TREXKD, ymax=high$TREXKD, x=Time,group=factor(Percent),fill = factor(Percent)), alpha = 0.2) +
-   ggtitle("ABM: \n TREX1 Knockdown") +
+ p3 <- ggplot(ISDDetAve) + geom_line(aes(y=TREXKD, x=Time, group=factor(Percent), color = factor(Percent))) +
+   geom_ribbon(aes(ymin=lowDet$TREXKD, ymax=highDet$TREXKD, x=Time,group=factor(Percent),fill = factor(Percent)), alpha = 0.2) +
+   ggtitle("ABM: Deterministic + Homogeneous \n TREX1 Knockdown") +
    ylab("Average IFN (nM)") +
    commonFigureOptions
 
- p4 <- ggplot(stateAve) + geom_line(aes(y=IRF7KD, x=Time, group=factor(Percent), color = factor(Percent))) +
-   geom_ribbon(aes(ymin=low$IRF7KD, ymax=high$IRF7KD, x=Time,group=factor(Percent),fill = factor(Percent)), alpha = 0.2) +
-   ggtitle("ABM: \n IRF7 Knockdown") +
+ p4 <- ggplot(ISDDetAve) + geom_line(aes(y=IRF7KD, x=Time, group=factor(Percent), color = factor(Percent))) +
+   geom_ribbon(aes(ymin=lowDet$IRF7KD, ymax=highDet$IRF7KD, x=Time,group=factor(Percent),fill = factor(Percent)), alpha = 0.2) +
+   ggtitle("ABM: Deterministic + Homogeneous \n IRF7 Knockdown") +
    ylab("Average IFN (nM)") +
    commonFigureOptions
 
-   figure <- ggarrange(p1, p2, p3, p4,
+ p5 <- ggplot(ISDStochAve) + geom_line(aes(y=TREXKD, x=Time, group=factor(Percent), color = factor(Percent))) +
+   geom_ribbon(aes(ymin=lowStoch$TREXKD, ymax=highStoch$TREXKD, x=Time,group=factor(Percent),fill = factor(Percent)), alpha = 0.2) +
+   ggtitle("ABM: Stochastic + Heterogeneous \n TREX1 Knockdown") +
+   ylab("Average IFN (nM)") +
+   commonFigureOptions
+
+ p6 <- ggplot(ISDStochAve) + geom_line(aes(y=IRF7KD, x=Time, group=factor(Percent), color = factor(Percent))) +
+   geom_ribbon(aes(ymin=lowStoch$IRF7KD, ymax=highStoch$IRF7KD, x=Time,group=factor(Percent),fill = factor(Percent)), alpha = 0.2) +
+   ggtitle("ABM: Stochastic + Heterogeneous \n IRF7 Knockdown") +
+   ylab("Average IFN (nM)") +
+   commonFigureOptions
+
+   figure <- ggarrange(p1, p3, p5, p2, p4, p6,
                        labels = "AUTO",
                        common.legend = TRUE, legend = "right",
                        align = "hv",
-                       ncol = 2, nrow = 2)
+                       ncol = 3, nrow = 2)
 
- ggsave("./Figures/Figure4.pdf")
+ ggsave("./Figures/Figure4.pdf",width = 15,height=8)
  """

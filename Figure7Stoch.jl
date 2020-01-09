@@ -22,6 +22,7 @@ addprocs(11)
     end
 
     #Assign the new parameters to the model
+	@show percentIFN
     probStoch = remake(prob; p=θ)
     sol = @time solve(probStoch,CVODE_BDF(linear_solver=:GMRES),saveat=0.1,callback=cb)
 

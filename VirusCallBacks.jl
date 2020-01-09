@@ -25,7 +25,7 @@ function TryInfect(integrator)
     #Probability that an infected cell will spread infection
     chanceOfInfection = Bernoulli(0.5)
     cellsInfected = integrator.p.cellsInfected
-    @show integrator.t
+    #@show integrator.t
 
     #Sundials does not presereve problem shape...
     uReshaped = reshape(integrator.u,N,N,species)

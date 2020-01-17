@@ -52,6 +52,7 @@ states = Vector(undef,reps)
 
 #Loop through all the replicates
 for i = 1:reps
+	@show i
 	#Simulate all of the different percentages in parallel and write data
     states[i] = pmap(x -> VirusStoch(x,prob),percentIFN)
 end

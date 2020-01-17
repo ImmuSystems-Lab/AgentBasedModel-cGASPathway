@@ -1,5 +1,5 @@
 using Distributed
-addprocs(2)
+addprocs(25)
 
 @everywhere include("ProblemGenerator.jl")
 @everywhere include("VirusCallBacks.jl")

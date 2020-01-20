@@ -57,7 +57,8 @@ for i = 1:reps
     states[i] = pmap(x -> VirusStoch(x,prob),percentIFN)
 end
 
-
+@save "states.jld2" states
+#=
 #Saving the Data
 #Need to create a DataFrame with the following columns:
 #Percent, Sample, Time, Healthy, Infected, Dead
@@ -79,3 +80,4 @@ VirusSim = DataFrame()
 CSV.write("VirusFigure7DataHetero.csv",VirusSim)
 
 #plot(range(prob.tspan[1],prob.tspan[2],step=0.1),states ./ nCells)
+=#

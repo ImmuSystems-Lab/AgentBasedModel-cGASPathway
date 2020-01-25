@@ -1,5 +1,5 @@
 using Distributed
-addprocs(25)
+addprocs(11)
 
 @everywhere include("ProblemGenerator.jl")
 @everywhere include("VirusCallBacks.jl")
@@ -16,9 +16,10 @@ addprocs(25)
     θ = deepcopy(prob.p)
     #The 11th parameter (kcat7) controls IFN production, if zero then no IFN
     if percentIFN == 0.0
-        θ.par[11] .= 0.0
+        θ.par[11] .= 0.0 #Set all parameters to zero
     else
-        θ.par[11][rand(N,N) .> percentIFN] .= 0.0
+		θ.par[11] .= 47639.70295 #Reset the paramets all to nonzero
+        θ.par[11][rand(N,N) .> percentIFN] .= 0.0 #Set some to zero
     end
 
     #Assign the new parameters to the model
@@ -38,7 +39,7 @@ end
 
 
 #Define a new problem
-@everywhere prob = ModelSetup(:Virus,:Stochastic,:Hetero)
+@everywhere prob = ModelSetup(:Virus,:Stochastic,:Homo)
 
 #Time points to save during simulation
 @everywhere const saveTimePoints = range(prob.tspan[1],prob.tspan[2],step=0.1)
@@ -57,19 +58,19 @@ for i = 1:reps
     states[i] = pmap(x -> VirusStoch(x,prob),percentIFN)
 end
 
-@save "states.jld2" states
-#=
+
 #Saving the Data
 #Need to create a DataFrame with the following columns:
 #Percent, Sample, Time, Healthy, Infected, Dead
 numPercent = length(percentIFN)
 numTime = length(saveTimePoints)
 numSample = reps
-statesLong = vcat(states...)
+statesLong = vcat(vcat(states...)...) #There has to be a better way to do this
+statesLong /= nCells
 
 VirusSim = DataFrame()
-	VirusSim.Percent = repeat(percentIFN,inner=numSample*numTime)
-	VirusSim.Sample = repeat(1:reps,inner=numTime,outer=numPercent)
+	VirusSim.Percent = repeat(percentIFN,inner=numTime,outer=numSample)
+	VirusSim.Sample = repeat(1:reps,inner=numTime*numPercent)
 	VirusSim.Time = repeat(saveTimePoints,outer=numPercent*numSample)
 	VirusSim.Healthy = statesLong[:,1]
 	VirusSim.Infected = statesLong[:,2]
@@ -77,7 +78,4 @@ VirusSim = DataFrame()
 
 
 #Save the simulation to a CSV to plot
-CSV.write("VirusFigure7DataHetero.csv",VirusSim)
-
-#plot(range(prob.tspan[1],prob.tspan[2],step=0.1),states ./ nCells)
-=#
+CSV.write("./ServerSimulations/VirusFigure7DataHomo.csv",VirusSim)

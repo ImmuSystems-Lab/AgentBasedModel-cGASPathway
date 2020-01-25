@@ -1,6 +1,8 @@
 using RCall, CSV, DataFrames
 
-#Figure 6
+########################################################################
+#Chronic Infected (Figure 6)
+########################################################################
 
 chronicIFN = CSV.read("StochFigure6Data.csv")
 
@@ -25,4 +27,19 @@ p1 <- ggplot(chronicIFN, aes(kcat8, tau7, fill=IFN)) +
 
 
 ggsave("../Figures/Figure6Stoch.pdf")
+"""
+
+
+########################################################################
+#Stochastic IFN (Figure 7)
+########################################################################
+
+#We need to pass 2 subsetted dataframes into R for plotting
+timeDynamics = filter(row->row[:Percent]==0.2,VirusSim)
+
+@rput VirusSim
+R"""
+
+timeDynamics
+
 """

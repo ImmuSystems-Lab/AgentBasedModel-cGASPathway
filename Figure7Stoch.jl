@@ -18,12 +18,13 @@ addprocs(11)
     if percentIFN == 0.0
         θ.par[11] .= 0.0 #Set all parameters to zero
     else
-		#θ.par[11] .= 47639.70295 #Reset the paramets all to nonzero
+		θ.par[11] .= 47639.70295 #Reset the parameters all to nonzero
         θ.par[11][rand(N,N) .> percentIFN] .= 0.0 #Set some to zero
     end
 
     #Assign the new parameters to the model
 	@show percentIFN
+	println(θ)
     probStoch = remake(prob; p=θ)
     sol = @time solve(probStoch,CVODE_BDF(linear_solver=:GMRES),saveat=0.1,callback=cb)
 

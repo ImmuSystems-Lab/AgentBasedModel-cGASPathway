@@ -15,7 +15,7 @@ const nCells = N^2 #number of cells in the simulation
 const cellVol = 3e-12 #Cell Volume (liters)
 const Na = 6.02e23 #Avagadro's number
 const species = 14 #Number of states within each cell (including virus)
-const moi = 1.0e-3 #Multicity of infection
+const moi = 1.0e-2 #Multicity of infection
 const cellIndicies = CartesianIndices(zeros(N,N)) #set of indices for looping through every cell
 
 #Function that converts molecules to nM
@@ -256,4 +256,34 @@ function cellStates(t,θ)
     #Number of infected cells at time t
     totalInfected = nCells - totaHealthy - totalDead
     return [totaHealthy,totalInfected,totalDead]
+end
+
+###############################################################
+# 6. Display Information about the Parameter Container
+###############################################################
+
+function Base.show(io::IO,p::ParContainer)
+  #Is simulation det/stoch and homo/hetero
+  attribute1 = isa(p.par[1],Array) ? "Stochastic" : "Deterministic" #True if stochastic
+  attribute2 = all(p.mass[1][1].==p.mass[1]) ? "Homogeneous" : "Heterogeneous" #True is homo
+  println("Cell Population: ",attribute1," and ",attribute2)
+
+  #What is the Input for DNA?
+  modelInput = p.DNAReplicate==1 ? "Virus" : "ISD"
+  println("Model Input: ",modelInput)
+
+  #How many cells initially infected?
+  println("Initially Infected: ",100.0*sum(p.cellsInfected.==0.0)/nCells, "%")
+
+  println("Currently Infected: ",100.0*sum(p.cellsInfected.<Inf)/nCells, "%")
+
+  #How many cells are initially dead?
+  println("Dead: ",100.0*((nCells - sum(p.cellsDead.==Inf))/nCells), "%")
+
+  #How many cells are not responsive to infection?
+  if attribute1 == "Stochastic"
+    println("Cells with kcat7=0: ",100.0*sum(p.par[11].==0.0)/nCells, "%")
+  end
+
+
 end

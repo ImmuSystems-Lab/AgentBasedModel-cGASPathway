@@ -62,4 +62,4 @@ end
 chronicIFN = DataFrame(kcat8 = kvals[:,1],tau7 = kvals[:,2], IFN = reverse(meanIFNβ[:]))
 
 #Save the simulation to plot
-CSV.write("VirusFigure6Data.csv",chronicIFN)
+CSV.write("./ServerSimulations/VirusFigure6_Det_Hetero.csv",chronicIFN)

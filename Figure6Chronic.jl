@@ -2,7 +2,7 @@
 #change the number of cores used as needed
 using RCall
 using Distributed
-addprocs(56)
+addprocs(40)
 #The @everywhere macro runs the command/defines the thing on all the processors
 @everywhere include("ProblemGenerator.jl")
 
@@ -33,7 +33,7 @@ end
 
 
 #Generate a problem
-@everywhere prob = ModelSetup(:ISD,:Stochastic,:Hetero)
+@everywhere prob = ModelSetup(:ISD,:notStochastic,:Hetero)
 
 #We need to know if every cell has been given a unique parameter set
 if isa(prob.p.par[1],Array) #Is the first parameter a single number or array?

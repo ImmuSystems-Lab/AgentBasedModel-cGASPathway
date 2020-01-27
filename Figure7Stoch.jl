@@ -12,8 +12,18 @@ addprocs(11)
 #Define the percentages of cells producing IFN
 #Each cell has its own unique parameter set
 @everywhere function VirusStoch(percentIFN,prob)
-    #Make a copy of the parameter container
+    #Make a copy of the parameter container and the initial condition
     θ = deepcopy(prob.p)
+	u₀ = deepcopy(prob.u0)
+
+	#Assign cells to be initially infected
+	probDistInfected = Poisson(moi)
+	u₀[:,:,2] = @. m2c(1e3*rand(probDistInfected,N,N))
+
+	#Reset what cells are initially infected
+	θ.cellsInfected = fill(Inf,N,N)
+	θ.cellsInfected[findall(u0[:,:,2] .> 0.0), 1] .= 0.0
+
     #The 11th parameter (kcat7) controls IFN production, if zero then no IFN
     if percentIFN == 0.0
         θ.par[11] .= 0.0 #Set all parameters to zero
@@ -23,9 +33,8 @@ addprocs(11)
     end
 
     #Assign the new parameters to the model
-	@show percentIFN
 	println(θ)
-    probStoch = remake(prob; p=θ)
+    probStoch = remake(prob; p=θ,u0=u₀)
     sol = @time solve(probStoch,CVODE_BDF(linear_solver=:GMRES),saveat=0.1,callback=cb)
 
     #Calculate the cell state dynamics over time

@@ -22,7 +22,7 @@ addprocs(11)
 
 	#Reset what cells are initially infected
 	θ.cellsInfected = fill(Inf,N,N)
-	θ.cellsInfected[findall(u0[:,:,2] .> 0.0), 1] .= 0.0
+	θ.cellsInfected[findall(u₀[:,:,2] .> 0.0), 1] .= 0.0
 
     #The 11th parameter (kcat7) controls IFN production, if zero then no IFN
     if percentIFN == 0.0

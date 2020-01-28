@@ -1,6 +1,5 @@
 #Run the Chronic simulations in parallel
 #change the number of cores used as needed
-using RCall
 using Distributed
 addprocs(40)
 #The @everywhere macro runs the command/defines the thing on all the processors

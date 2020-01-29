@@ -1,5 +1,5 @@
 using Distributed
-addprocs(11)
+addprocs(50)
 
 @everywhere include("ProblemGenerator.jl")
 @everywhere include("VirusCallBacks.jl")
@@ -11,7 +11,7 @@ addprocs(11)
 
 #Define the percentages of cells producing IFN
 #Each cell has its own unique parameter set
-@everywhere function VirusStoch(percentIFN,prob)
+@everywhere function VirusStoch(rep,percentIFN,prob)
     #Make a copy of the parameter container and the initial condition
     θ = deepcopy(prob.p)
 	u₀ = deepcopy(prob.u0)
@@ -33,7 +33,8 @@ addprocs(11)
     end
 
     #Assign the new parameters to the model
-	println(θ)
+	#println(θ)
+	@show rep, percentIFN
     probStoch = remake(prob; p=θ,u0=u₀)
     sol = @time solve(probStoch,CVODE_BDF(linear_solver=:GMRES),saveat=0.1,callback=cb)
 
@@ -59,16 +60,16 @@ percentIFN = 0.0:0.1:1.0
 #Number of repititions for each IFN percentage
 reps = 10
 #Vector to save the simulations
-states = Vector(undef,reps)
+#states = Vector(undef,reps)
 
-#Loop through all the replicates
-for i = 1:reps
-	@show i
-	#Simulate all of the different percentages in parallel and write data
-    states[i] = pmap(x -> VirusStoch(x,prob),percentIFN)
-end
+iter = Iterators.product(1:reps,percentIFN)
 
+#Simulate all of the different percentages in parallel and write data
+states = pmap(x -> VirusStoch(x[1],x[2],prob),iter)
 
+@save "states.jld2" states
+
+#=
 #Saving the Data
 #Need to create a DataFrame with the following columns:
 #Percent, Sample, Time, Healthy, Infected, Dead
@@ -89,3 +90,4 @@ VirusSim = DataFrame()
 
 #Save the simulation to a CSV to plot
 CSV.write("./ServerSimulations/VirusFigure7DataHomo.csv",VirusSim)
+=#

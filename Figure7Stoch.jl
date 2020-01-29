@@ -39,10 +39,16 @@ addprocs(50)
     sol = @time solve(probStoch,CVODE_BDF(linear_solver=:GMRES),saveat=0.1,callback=cb)
 
     #Calculate the cell state dynamics over time
-    allStates = zeros(Int,length(saveTimePoints),3) #Healthy, Infected or Dead
+	#Percent, Sample, Time, Healthy, Infected, Dead
+	numTime = length(saveTimePoints)
+    allStates = zeros(numTime,6)
+
+	allstates[:,1] = fill(percentIFN,numTime)
+	allstates[:,2] = fill(rep,numTime)
+	allstates[:,3] = saveTimePoints
 
     for (i,t) in enumerate(saveTimePoints)
-        allStates[i,:] = cellStates(t,θ)
+        allStates[i,4:6] = cellStates(t,θ)
     end
 
     return allStates
@@ -67,27 +73,14 @@ iter = Iterators.product(1:reps,percentIFN)
 #Simulate all of the different percentages in parallel and write data
 states = pmap(x -> VirusStoch(x[1],x[2],prob),iter)
 
-@save "states.jld2" states
-
-#=
 #Saving the Data
 #Need to create a DataFrame with the following columns:
 #Percent, Sample, Time, Healthy, Infected, Dead
-numPercent = length(percentIFN)
-numTime = length(saveTimePoints)
-numSample = reps
-statesLong = vcat(vcat(states...)...) #There has to be a better way to do this
-statesLong /= nCells
+statesLong = vcat(states...)
+statesLong[:,4:6] = statesLong[:,4:6]./nCells #Get cell Percents
 
-VirusSim = DataFrame()
-	VirusSim.Percent = repeat(percentIFN,inner=numTime,outer=numSample)
-	VirusSim.Sample = repeat(1:reps,inner=numTime*numPercent)
-	VirusSim.Time = repeat(saveTimePoints,outer=numPercent*numSample)
-	VirusSim.Healthy = statesLong[:,1]
-	VirusSim.Infected = statesLong[:,2]
-	VirusSim.Dead = statesLong[:,3]
-
+VirusSim = convert(DataFrame,statesLong)
+rename!(VirusSim,[:Percent, :Sample, :Time, :Healthy, :Infected, :Dead])
 
 #Save the simulation to a CSV to plot
-CSV.write("./ServerSimulations/VirusFigure7DataHomo.csv",VirusSim)
-=#
+CSV.write("./ServerSimulations/VirusFigure7DataHomo0129.csv",VirusSim)

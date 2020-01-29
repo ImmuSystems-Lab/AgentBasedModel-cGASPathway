@@ -5,8 +5,8 @@ addprocs(2)
 
 
 #Need a function that creates distributions of heterogenous states
-@everywhere AddNoise2States(σ) =
-  [TruncatedNormal(μ, σ * μ, 0, Inf) for μ in nonZeroSpeciesValues]
+@everywhere AddNoise2States(σ²) =
+  [truncated(Normal(μ, σ²), 0, Inf) for μ in nonZeroSpeciesValues]
 
 #Create a function that calculate the peak IFN distribution given:
  #The number of cells initially infected
@@ -143,5 +143,5 @@ figure <- ggarrange(p1,p2,
                     align = "h",
                     ncol = 1, nrow = 2)
 
-ggsave("./Figures/Figure5.pdf")
+ggsave("./Figures/Figure5new.pdf")
 """

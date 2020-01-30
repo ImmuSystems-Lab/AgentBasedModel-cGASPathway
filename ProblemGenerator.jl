@@ -15,7 +15,7 @@ const nCells = N^2 #number of cells in the simulation
 const cellVol = 3e-12 #Cell Volume (liters)
 const Na = 6.02e23 #Avagadro's number
 const species = 14 #Number of states within each cell (including virus)
-const moi = 1.0e-3 #Multicity of infection
+const moi = 1.0e-2 #Multicity of infection
 const cellIndicies = CartesianIndices(zeros(N,N)) #set of indices for looping through every cell
 
 #Function that converts molecules to nM

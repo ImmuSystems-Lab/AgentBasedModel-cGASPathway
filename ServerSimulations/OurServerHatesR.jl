@@ -65,12 +65,95 @@ ggsave("../Figures/Figure6_All.pdf",width = 14,height=5)
 #Stochastic IFN (Figure 7)
 ########################################################################
 
-#We need to pass 2 subsetted dataframes into R for plotting
-timeDynamics = filter(row->row[:Percent]==0.2,VirusSim)
-
-@rput VirusSim
 R"""
+library(tidyverse)
+library(ggpubr)
+library(scales)
 
-timeDynamics
+df <- read.csv("VirusFigure7DataHomo0130.csv")
 
+df_tidy_median <- df %>%
+  pivot_longer(c(Healthy,Infected,Dead),names_to = "CellState",values_to = "CellPercent") %>%
+  filter(Percent==0.2) %>%
+  group_by(Time,CellState) %>%
+  summarise(medianPercentCells = median(CellPercent),
+            q25 = quantile(CellPercent,0.25),
+            q75 = quantile(CellPercent,0.75))
+
+df_tidy_median$CellState = factor(df_tidy_median$CellState,ordered=TRUE,levels = c("Healthy","Infected","Dead"))
+
+color_list <- c("#377EB8","#4DAF4A","#E41A1C")
+
+p1 <- ggplot(df_tidy_median, aes(x=Time, y=medianPercentCells)) +
+  geom_line(aes(x=Time, y=medianPercentCells, color=CellState)) +
+  geom_ribbon(aes(ymin=q25, ymax=q75, fill=CellState),alpha=0.3) +
+  scale_fill_manual(values=color_list) +
+  scale_color_manual(values=color_list) +
+  scale_y_continuous(labels = scales::percent) +
+  xlab("Time (hours)") +
+  ylab("Cell Percent") +
+  theme_pubr(border=TRUE)
+
+
+df_tidy_box <- df %>%
+  filter(Time==48)
+
+p2 <-ggplot(df_tidy_box, aes(x=as.factor(Percent), y=Dead)) +
+  stat_boxplot(geom = "errorbar", width = 0.2,size=0.1) +
+  geom_boxplot(fatten=1, fill = "#f6b9ba") +
+  scale_y_continuous(labels = scales::percent,limits=c(0,1)) +
+  scale_x_discrete(labels = percent((0:10)/10)) +
+  xlab("IFNb Producing Cells") +
+  ylab("Dead Cells") +
+  theme_pubr(border=TRUE)
+
+
+df <- read.csv("VirusFigure7DataHetero.csv")
+
+df_tidy_median <- df %>%
+  pivot_longer(c(Healthy,Infected,Dead),names_to = "CellState",values_to = "CellPercent") %>%
+  filter(Percent==0.2) %>%
+  group_by(Time,CellState) %>%
+  summarise(medianPercentCells = median(CellPercent),
+            q25 = quantile(CellPercent,0.25),
+            q75 = quantile(CellPercent,0.75))
+
+df_tidy_median$CellState = factor(df_tidy_median$CellState,ordered=TRUE,levels = c("Healthy","Infected","Dead"))
+
+color_list <- c("#377EB8","#4DAF4A","#E41A1C")
+
+p3 <- ggplot(df_tidy_median, aes(x=Time, y=medianPercentCells)) +
+  geom_line(aes(x=Time, y=medianPercentCells, color=CellState)) +
+  geom_ribbon(aes(ymin=q25, ymax=q75, fill=CellState),alpha=0.3) +
+  scale_fill_manual(values=color_list) +
+  scale_color_manual(values=color_list) +
+  scale_y_continuous(labels = scales::percent) +
+  xlab("Time (hours)") +
+  ylab("Cell Percent") +
+  theme_pubr(border=TRUE)
+
+
+df_tidy_box <- df %>%
+  filter(Time==48)
+
+p4 <-ggplot(df_tidy_box, aes(x=as.factor(Percent), y=Dead)) +
+  stat_boxplot(geom = "errorbar", width = 0.2,size=0.1) +
+  geom_boxplot(fatten=1, fill = "#f6b9ba") +
+  scale_y_continuous(labels = scales::percent,limits=c(0,1)) +
+  scale_x_discrete(labels = percent((0:10)/10)) +
+  xlab("IFNb Producing Cells") +
+  ylab("Dead Cells") +
+  theme_pubr(border=TRUE)
+
+
+
+
+figure <- ggarrange(p1, p2, p3, p4,
+                    labels = "AUTO",
+                    common.legend = TRUE, legend = "right",
+                    widths = c(3,6),
+                    align = "hv",
+                    ncol = 2, nrow = 2)
+
+ggsave("../Figures/Figure7.pdf",width = 9,height=6,units="in")
 """

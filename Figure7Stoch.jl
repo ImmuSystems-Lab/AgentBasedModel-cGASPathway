@@ -43,9 +43,9 @@ addprocs(50)
 	numTime = length(saveTimePoints)
     allStates = zeros(numTime,6)
 
-	allstates[:,1] = fill(percentIFN,numTime)
-	allstates[:,2] = fill(rep,numTime)
-	allstates[:,3] = saveTimePoints
+	allStates[:,1] = fill(percentIFN,numTime)
+	allStates[:,2] = fill(rep,numTime)
+	allStates[:,3] = saveTimePoints
 
     for (i,t) in enumerate(saveTimePoints)
         allStates[i,4:6] = cellStates(t,θ)

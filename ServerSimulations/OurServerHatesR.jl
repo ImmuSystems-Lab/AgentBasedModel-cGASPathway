@@ -89,6 +89,7 @@ p1 <- ggplot(df_tidy_median, aes(x=Time, y=medianPercentCells)) +
   geom_ribbon(aes(ymin=q25, ymax=q75, fill=CellState),alpha=0.3) +
   scale_fill_manual(values=color_list) +
   scale_color_manual(values=color_list) +
+  scale_x_continuous(breaks=seq(0, 48, 12)) +
   scale_y_continuous(labels = scales::percent) +
   xlab("Time (hours)") +
   ylab("Cell Percent") +
@@ -101,9 +102,10 @@ df_tidy_box <- df %>%
 p2 <-ggplot(df_tidy_box, aes(x=as.factor(Percent), y=Dead)) +
   stat_boxplot(geom = "errorbar", width = 0.2,size=0.1) +
   geom_boxplot(fatten=1, fill = "#f6b9ba") +
+  #geom_jitter(shape=16, position=position_jitter(0.2)) +
   scale_y_continuous(labels = scales::percent,limits=c(0,1)) +
   scale_x_discrete(labels = percent((0:10)/10)) +
-  xlab("IFNb Producing Cells") +
+  xlab(expression("IFN"*beta*" Producing Cells")) +
   ylab("Dead Cells") +
   theme_pubr(border=TRUE)
 
@@ -127,6 +129,7 @@ p3 <- ggplot(df_tidy_median, aes(x=Time, y=medianPercentCells)) +
   geom_ribbon(aes(ymin=q25, ymax=q75, fill=CellState),alpha=0.3) +
   scale_fill_manual(values=color_list) +
   scale_color_manual(values=color_list) +
+  scale_x_continuous(breaks=seq(0, 48, 12)) +
   scale_y_continuous(labels = scales::percent) +
   xlab("Time (hours)") +
   ylab("Cell Percent") +
@@ -141,7 +144,7 @@ p4 <-ggplot(df_tidy_box, aes(x=as.factor(Percent), y=Dead)) +
   geom_boxplot(fatten=1, fill = "#f6b9ba") +
   scale_y_continuous(labels = scales::percent,limits=c(0,1)) +
   scale_x_discrete(labels = percent((0:10)/10)) +
-  xlab("IFNb Producing Cells") +
+  xlab(expression("IFN"*beta*" Producing Cells")) +
   ylab("Dead Cells") +
   theme_pubr(border=TRUE)
 

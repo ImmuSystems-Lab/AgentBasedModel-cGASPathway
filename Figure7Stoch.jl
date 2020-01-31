@@ -18,7 +18,7 @@ addprocs(50)
 
 	#Assign cells to be initially infected
 	probDistInfected = Poisson(moi)
-	u₀[:,:,2] = @. m2c(1e3*rand(probDistInfected,N,N))
+	#u₀[:,:,2] = @. m2c(1e3*rand(probDistInfected,N,N))
 
 	#Reset what cells are initially infected and dead
 	θ.cellsInfected = fill(Inf,N,N)

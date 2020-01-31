@@ -20,9 +20,11 @@ addprocs(50)
 	probDistInfected = Poisson(moi)
 	u₀[:,:,2] = @. m2c(1e3*rand(probDistInfected,N,N))
 
-	#Reset what cells are initially infected
+	#Reset what cells are initially infected and dead
 	θ.cellsInfected = fill(Inf,N,N)
 	θ.cellsInfected[findall(u₀[:,:,2] .> 0.0), 1] .= 0.0
+	θ.cellsDead = fill(Inf,N,N)
+	θ.infectFirstAttempt = trues(N,N)
 
     #The 11th parameter (kcat7) controls IFN production, if zero then no IFN
     if percentIFN == 0.0
@@ -48,7 +50,7 @@ addprocs(50)
 	allStates[:,3] = saveTimePoints
 
     for (i,t) in enumerate(saveTimePoints)
-        allStates[i,4:6] = cellStates(t,θ)
+        allStates[i,4:6] = cellStates(t,probStoch.p)
     end
 
     return allStates
@@ -64,7 +66,7 @@ end
 #What percent of the cell population will be capable of producing IFNb?
 percentIFN = 0.0:0.1:1.0
 #Number of repititions for each IFN percentage
-reps = 10
+reps = 4
 #Vector to save the simulations
 #states = Vector(undef,reps)
 
@@ -83,4 +85,4 @@ VirusSim = convert(DataFrame,statesLong)
 rename!(VirusSim,[:Percent, :Sample, :Time, :Healthy, :Infected, :Dead])
 
 #Save the simulation to a CSV to plot
-CSV.write("./ServerSimulations/VirusFigure7DataHomo0130.csv",VirusSim)
+CSV.write("./ServerSimulations/VirusFigure7DataHomo0131.csv",VirusSim)

@@ -85,4 +85,4 @@ VirusSim = convert(DataFrame,statesLong)
 rename!(VirusSim,[:Percent, :Sample, :Time, :Healthy, :Infected, :Dead])
 
 #Save the simulation to a CSV to plot
-CSV.write("./ServerSimulations/VirusFigure7DataHetero.csv",VirusSim)
+CSV.write("./ServerSimulations/VirusFigure7DataHomo0131.csv",VirusSim)

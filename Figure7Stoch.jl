@@ -58,7 +58,7 @@ end
 
 
 #Define a new problem
-@everywhere prob = ModelSetup(:Virus,:Stochastic,:Hetero)
+@everywhere prob = ModelSetup(:Virus,:Stochastic,:Homo)
 
 #Time points to save during simulation
 @everywhere const saveTimePoints = range(prob.tspan[1],prob.tspan[2],step=0.1)

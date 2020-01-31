@@ -58,7 +58,7 @@ end
 
 
 #Define a new problem
-@everywhere prob = ModelSetup(:Virus,:Stochastic,:Homo)
+@everywhere prob = ModelSetup(:Virus,:Stochastic,:Hetero)
 
 #Time points to save during simulation
 @everywhere const saveTimePoints = range(prob.tspan[1],prob.tspan[2],step=0.1)
@@ -85,4 +85,4 @@ VirusSim = convert(DataFrame,statesLong)
 rename!(VirusSim,[:Percent, :Sample, :Time, :Healthy, :Infected, :Dead])
 
 #Save the simulation to a CSV to plot
-CSV.write("./ServerSimulations/VirusFigure7DataHomo0131.csv",VirusSim)
+CSV.write("./ServerSimulations/VirusFigure7DataHetero.csv",VirusSim)

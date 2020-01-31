@@ -70,7 +70,7 @@ library(tidyverse)
 library(ggpubr)
 library(scales)
 
-df <- read.csv("VirusFigure7DataHomo0130.csv")
+df <- read.csv("VirusFigure7DataHomo0131.csv")
 
 df_tidy_median <- df %>%
   pivot_longer(c(Healthy,Infected,Dead),names_to = "CellState",values_to = "CellPercent") %>%

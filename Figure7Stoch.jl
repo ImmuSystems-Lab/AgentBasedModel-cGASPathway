@@ -66,7 +66,7 @@ end
 #What percent of the cell population will be capable of producing IFNb?
 percentIFN = 0.0:0.1:1.0
 #Number of repititions for each IFN percentage
-reps = 4
+reps = 10
 #Vector to save the simulations
 #states = Vector(undef,reps)
 

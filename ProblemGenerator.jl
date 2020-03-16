@@ -10,7 +10,7 @@ using JLD2, FileIO #Saving simulations
 ###############################################################
 
 #Constants for all cells
-const N=200 #number of grid points along one dimensions
+const N=100 #number of grid points along one dimensions
 const nCells = N^2 #number of cells in the simulation
 const cellVol = 3e-12 #Cell Volume (liters)
 const Na = 6.02e23 #Avagadro's number

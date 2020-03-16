@@ -148,22 +148,3 @@ R"""
 
   ggsave("./Figures/Figure2.pdf",width=10,height=5,units="in")
 """
-
-
-stateToPlot = 7
-plotState=[solVirussh[coord,stateToPlot,:] for coord in cellIndicies]
-plot(solVirussh.t,plotState[:],leg=false,framestyle=:box,xtickfontsize=16,ytickfontsize=16)
-title!(statesNames[stateToPlot])
-xlabel!("Time (hrs)")
-ylabel!("(nM)")
-
-
-#Get the max value for IFNβ concentration for whole simulation
-Maxval = maximum(solVirussh[:,:,7,:])
-#Loop through time points to make an animation
-anim = @animate for i = tspan[1]:0.1:tspan[2]
-    heatmap(solVirussh(i)[:,:,7],clims=(0.0,Maxval),
-            title="Time = " * string(i) * " hrs")
-end
-
-gif(anim,"./Figures/IFNAnimation.gif")

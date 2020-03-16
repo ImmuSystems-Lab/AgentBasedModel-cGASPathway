@@ -70,7 +70,7 @@ library(tidyverse)
 library(ggpubr)
 library(scales)
 
-df <- read.csv("VirusFigure7DataHomo0131.csv")
+df <- read.csv("VirusFigure7DataHomo50cells.csv")
 
 df_tidy_median <- df %>%
   pivot_longer(c(Healthy,Infected,Dead),names_to = "CellState",values_to = "CellPercent") %>%
@@ -110,7 +110,7 @@ p2 <-ggplot(df_tidy_box, aes(x=as.factor(Percent), y=Dead)) +
   theme_pubr(border=TRUE)
 
 
-df <- read.csv("VirusFigure7DataHetero.csv")
+df <- read.csv("VirusFigure7DataHetero50cells.csv")
 
 df_tidy_median <- df %>%
   pivot_longer(c(Healthy,Infected,Dead),names_to = "CellState",values_to = "CellPercent") %>%

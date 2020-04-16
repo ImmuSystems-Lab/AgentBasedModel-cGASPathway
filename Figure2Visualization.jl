@@ -56,13 +56,6 @@ Virus_S_He.y = repeat(1:N,inner=N)
 Virus_S_He.IFN = vec(solVirus_S_He(10.0)[:,:,7])
 
 #-----------Virus, Not Stochastic, Homo, Cell States-----------
-function CellStateGrid(θ::ParContainer,t::Float64)
-  grid = zeros(Int64,size(θ.cellsInfected))
-  grid[θ.cellsInfected .<= t] .= 1
-  grid[θ.cellsDead .<= t] .= 2
-
-  return grid
-end
 
 CellStateVirus_S_He_raw = CellStateGrid(probVirus_S_He.p,10.0)
 CellStateVirus_S_He = DataFrame()
@@ -86,8 +79,8 @@ R"""
 
   #To draw an arc on the heatmap to show initial condition
   arc <- data.frame(
-  x0 = seq(0, 100, length.out = 1000),
-  y0 = sqrt(100^2 - (seq(0, 100, length.out = 1000)^2))
+  x0 = seq(0, 200, length.out = 1000),
+  y0 = sqrt(200^2 - (seq(0, 200, length.out = 1000)^2))
   )
 
   #Color Range
@@ -105,12 +98,12 @@ R"""
     geom_raster(ISD_nS_Ho, mapping =aes(x, y, fill=IFN)) +
     geom_line(data=arc, aes(x=x0, y=y0),size=0.2,linetype="dashed") +
     labs(fill="IFN (nM)") +
-    ggtitle("ISD Transfection") +
+    ggtitle("ISD \n Deterministic \n Homogeneous") +
     commonFigureOptions
 
   p2 <- ggplot(Virus_nS_Ho, aes(x, y, fill=IFN)) +
     geom_raster(aes(fill=IFN)) +
-    ggtitle("Virus Infection") +
+    ggtitle("Virus \n Deterministic \n Homogeneous") +
     commonFigureOptions
 
   p3 <- ggplot(CellStateVirus_nS_Ho, aes(x, y, fill=factor(Cell))) +
@@ -119,17 +112,18 @@ R"""
     scale_x_continuous(expand=c(0,0)) +
     scale_y_continuous(expand=c(0,0)) +
     theme_bw() +
-    labs(title ="Cell States", x="Cell", y="Cell", fill = "Cell State") +
+    labs(title ="Viral \n Infection \n Cell States", x="Cell", y="Cell", fill = "Cell State") +
     theme(plot.title = element_text(hjust = 0.5),aspect.ratio = 1)
 
   p4 <- ggplot() +
     geom_raster(ISD_S_He, mapping =aes(x, y, fill=IFN)) +
     geom_line(data=arc, aes(x=x0, y=y0),size=0.2,linetype="dashed") +
-    labs(fill="IFN (nM)") +
+    ggtitle("ISD \n Stochastic \n Heterogeneous") +
     commonFigureOptions
 
   p5 <- ggplot(Virus_S_He, aes(x, y, fill=IFN)) +
     geom_raster(aes(fill=IFN)) +
+    ggtitle("Virus \n Stochastic \n Heterogeneous") +
     commonFigureOptions
 
   p6 <- ggplot(CellStateVirus_S_He, aes(x, y, fill=factor(Cell))) +
@@ -138,7 +132,7 @@ R"""
     scale_x_continuous(expand=c(0,0)) +
     scale_y_continuous(expand=c(0,0)) +
     theme_bw() +
-    labs( x="Cell", y="Cell", fill = "Cell State") +
+    labs(title ="Viral \n Infection \n Cell States",x="Cell", y="Cell", fill = "Cell State") +
     theme(plot.title = element_text(hjust = 0.5),aspect.ratio = 1)
 
   figure1 <- ggarrange(p1, p2, p3, p4, p5, p6,
@@ -146,5 +140,5 @@ R"""
                       align = "h",
                       ncol = 3, nrow = 2)
 
-  ggsave("./Figures/Figure2.pdf",width=10,height=5,units="in")
+  ggsave("./Figures/Figure2New.pdf",width=12,height=8,units="in")
 """

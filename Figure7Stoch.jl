@@ -30,8 +30,7 @@ addprocs(50)
     if percentIFN == 0.0
         θ.par[11] .= 0.0 #Set all parameters to zero
     else
-		θ.par[11] .= 47639.70295 #Reset the parameters all to nonzero
-        θ.par[11][rand(N,N) .> percentIFN] .= 0.0 #Set some to zero
+		θ.par[11] .= 47639.70295 .* rand(Bernoulli(percentIFN),N,N)
     end
 
     #Assign the new parameters to the model

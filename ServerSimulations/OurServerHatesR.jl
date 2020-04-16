@@ -15,20 +15,11 @@ R"""
 library(ggplot2)
 library(ggpubr)
 
-#Find min/max to put everything on common scale
-IFNVals <- c(Det_Homo$IFN,Det_Hetero$IFN,Stoch_Homo$IFN)
-lowIFN <- min(IFNVals)
-highIFN <- max(IFNVals)
-
  commonFigureOptions <- list(
    theme_pubr(border=TRUE),
    xlab("Time (hours)"),
    labs(fill=expression(paste("IFN", beta, " (nM)"))),
    theme_pubr(border=TRUE,base_size = 14),
-   scale_fill_distiller(palette = "Spectral",
-    guide = guide_colorbar(frame.colour = "black",
-    ticks.colour = "black"),
-    limits = c(lowIFN,highIFN)),
    scale_x_continuous(expand=c(0,0)),
    scale_y_continuous(expand=c(0,0)),
    xlab(bquote("Interferon Degradation" ~ tau[7])),
@@ -38,26 +29,38 @@ highIFN <- max(IFNVals)
 
 p1 <- ggplot(Det_Homo, aes(kcat8, tau7, fill=IFN)) +
   geom_raster(aes(fill=IFN)) +
-  ggtitle("ISD: Deterministic + Homogeneous") +
+  ggtitle("ISD \n Deterministic \n Homogeneous") +
+  scale_fill_distiller(palette = "Spectral",
+   guide = guide_colorbar(frame.colour = "black",
+   ticks.colour = "black")) +
   commonFigureOptions
 
 p2 <- ggplot(Det_Hetero, aes(kcat8, tau7, fill=IFN)) +
   geom_raster(aes(fill=IFN)) +
-  ggtitle("ISD: Deterministic + Heterogeneous") +
+  ggtitle("ISD \n Deterministic \n Heterogeneous") +
+  scale_fill_distiller(palette = "Spectral",
+   guide = guide_colorbar(frame.colour = "black",
+   ticks.colour = "black")) +
   commonFigureOptions
+
+Stoch_Homo$IFN[Stoch_Homo$IFN<0] <- 0
 
 p3 <- ggplot(Stoch_Homo, aes(kcat8, tau7, fill=IFN)) +
   geom_raster(aes(fill=IFN)) +
-  ggtitle("ISD: Stochastic + Homogeneous") +
+  ggtitle("ISD \n Stochastic \n Homogeneous") +
+  scale_fill_distiller(palette = "Spectral",
+   guide = guide_colorbar(frame.colour = "black",
+   ticks.colour = "black"),
+   limits = c(0,max(Stoch_Homo$IFN))) +
   commonFigureOptions
 
 figure <- ggarrange(p1, p2, p3,
                     labels = "AUTO",
-                    common.legend = TRUE,legend = "right",
+                    legend = "right",
                     align = "hv",
                     ncol = 3, nrow = 1)
 
-ggsave("../Figures/Figure6_All.pdf",width = 14,height=5)
+ggsave("../Figures/Figure6_All.pdf",width = 15,height=5)
 """
 
 
@@ -71,6 +74,8 @@ library(ggpubr)
 library(scales)
 
 df <- read.csv("VirusFigure7DataHomo50cells.csv")
+
+#And that's when I discovered how to use tidyverse
 
 df_tidy_median <- df %>%
   pivot_longer(c(Healthy,Infected,Dead),names_to = "CellState",values_to = "CellPercent") %>%

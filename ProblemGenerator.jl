@@ -10,7 +10,7 @@ using JLD2, FileIO #Saving simulations
 ###############################################################
 
 #Constants for all cells
-const N=100 #number of grid points along one dimensions
+const N=200 #number of grid points along one dimensions
 const nCells = N^2 #number of cells in the simulation
 const cellVol = 3e-12 #Cell Volume (liters)
 const Na = 6.02e23 #Avagadro's number
@@ -23,7 +23,6 @@ m2c(molecule) = @. 1e9*molecule/(cellVol*Na)
 
 #Constants for all simulations
 const tspan = (0.0,48.0) #Time span for simulation
-const tstop = sort(rand(Uniform(tspan[1],tspan[2]),1000)) #Times where the simulation stops and check for virus movement
 const ΔIFNβ = zeros(N,N) #Define memory space to hold the Laplacian
 const statesNames = ["cGAS","DNA","Sting","cGAMP","IRF3","IFNbm","IFNb","STAT",
                      "SOCSm","IRF7m","TREX1m","IRF7","TREX1","Virus"] #for plotting
@@ -34,8 +33,10 @@ const θNames = [:k1f, :k1r, :k3f, :k3r, :k4f, :kcat5, :Km5, :k5r, :kcat6, :Km6,
  const nonZeroSpeciesIdx = [1,3,5] #cGAS, Sting, IRF3
  const nonZeroSpeciesValues = m2c([1e3, 1e3, 1e4]) #convert to concentration
 
-#THis function modifies initial values by adding guassian noise
-AddNoise2States(σ) = [TruncatedNormal(μ,σ*μ,0,Inf) for μ in nonZeroSpeciesValues]
+#This function modifies initial values by adding guassian noise
+#Standard deviation is same magnitude as mean
+# If p=0.5 then: (u₁=0.1 μ₂=100) → (σ₁=0.05 σ₂=50) instead of (σ₁=0.5 σ₂=0.5)
+AddNoise2States(p) = [truncated(Normal(μ,p*μ),0,Inf) for μ in nonZeroSpeciesValues]
 
 
  #Often it is useful to pass parameters between functions during the ODE solve,
@@ -133,7 +134,7 @@ AddNoise2States(σ) = [TruncatedNormal(μ,σ*μ,0,Inf) for μ in nonZeroSpeciesV
    cGAStot, Stingtot, IRF3tot = p.mass
    #Which cells are dead?
    💀 = p.deathParameter
-   #Should DNA be allowed to replicate (only with virus, not with ISD)?
+   #Should DNA be allowed to replicate (only with virus, not with ISD)
    🔁 = p.DNAReplicate
 
    #Calculate the diffusion of IFNβ
@@ -161,7 +162,7 @@ AddNoise2States(σ) = [TruncatedNormal(μ,σ*μ,0,Inf) for μ in nonZeroSpeciesV
  ###############################################################
 
 function ModelSetup(infectionMethod,IFNStoch,Hetero)
-    #Paramter values for the ODEs
+    #Parameter values for the ODEs
     θVals = [2.6899, 4.8505, 0.0356, 7.487, 517.4056, 22328.3852, 11226.3682,0.9341,
              206.9446, 10305.461, 47639.70295,3.8474, 13.006, 78.2048, 0.0209,
              0.0059, 0.001, 0.0112, 0.001, 99.9466, 15.1436,0.0276, 237539.3249,
@@ -175,7 +176,7 @@ function ModelSetup(infectionMethod,IFNStoch,Hetero)
         #Keep most parameters the same
         θ = fill.(θVals,N,N)
         #kcat8 produces IFN, make it nonzero ~20% of the time (can be changed later)
-        θ[11] .= rand([zeros(4)...,θVals[11]],N,N)
+        θ[11] .= θVals[11] .* rand(Bernoulli(0.2),N,N)
     else
         θ = θVals #Just keep the parameters as is (same for each cell)
     end
@@ -201,13 +202,13 @@ end
   if infectionMethod == :ISD
     #Define a region on the domain where cells will be infected
     circleOrigin = [0,0] #Where is the center of the drop?
-    circleRadiusSquared = 200^2 #How big is the drop?
+    circleRadiusSquared = N^2 #How big is the drop?
     #Calculate squared distances
     sqDist(x,c) = reduce(+, @. (x-c)^2)
     #Loop though cells and check if they are infected
     for currentCell in cellIndicies
         #Are the cells inside the infected region?
-        if sqDist([currentCell[1],currentCell[2]],circleOrigin) <= circleRadiusSquared
+        if sqDist([currentCell[1],currentCell[2]],circleOrigin) ≤ circleRadiusSquared
             u0[currentCell,2] = m2c(1e3)
         end
     end

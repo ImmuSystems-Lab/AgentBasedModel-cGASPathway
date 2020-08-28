@@ -1,4 +1,4 @@
-#Agent-Based Modeling Reveals Benefits of Heterogeneous and Stochastic Cell Populations during cGAS-Mediated IFNβ Production
+# Agent-Based Modeling Reveals Benefits of Heterogeneous and Stochastic Cell Populations during cGAS-Mediated IFNβ Production
 
 This repository implements a PDE/ABM model of interferon signaling across a population of 40,000 cells (200 by 200 grid). Each cell contains a set of ordinary differential equations that track intracellular concentrations overtime in response to interferon stimulatory DNA (ISD) or to viral infection. These stimuli cause cells to upregulate IFNβ which is excreted and allowed to diffuses across the cell population. As neighboring cells detect diffused IFNβ, they begin to express interferon stimulated genes (ISD) that feedback to regulate their own interferon response. The simulation terminates when all the cell die or all of the ISD/virus is eliminated. 
 
